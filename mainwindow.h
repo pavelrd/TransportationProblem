@@ -16,25 +16,38 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void print_array(int x, int y);
-    void print_array_result(int x, int y);
-
 private:
+
     Ui::MainWindow *ui;
 
-public slots:
+    bool    isUserInputBad();
+    bool    isProblemHasEqualWeight();
 
-    void createTable();
-    void test();
-    void calculate();
+    void    clearResultArray();
 
-signals:
+    void    copyUsersAndSupplyValuesToResultArray();
+    void    showAllResultsOnTableWidget();
+    void    fillArrayFromTableWidgetData();
 
-    void testsignal();
+    QString calculateDeliveryCost();
+    QString calculatePotentials();
+    void    calculateFirstSolutionByNorthwestCornerMethod();
+
+    void print_array();
+    void print_array_result(int x, int y, int highlightX=-1, int highlightY=-1);
+
+    int array[100][100] = {};
+
+    int array_result[100][100] = {};
 
 private slots:
+
     void on_action_triggered();
     void on_action_2_triggered();
     void on_action_3_triggered();
+    void createTable();
+    void calculate();
+
+    void on_action_4_triggered();
 };
 #endif // MAINWINDOW_H
