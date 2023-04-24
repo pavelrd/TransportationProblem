@@ -167,6 +167,8 @@ void MainWindow::createTable()
 void MainWindow::calculate()
 {
 
+    ui->plainTextEdit_result->clear();
+
     // ------- Проверка пользовательского ввода
 
     if( isUserInputBad() )
@@ -233,6 +235,25 @@ void MainWindow::calculate()
     estimations = calculateEstimationOfUnusedRoutes( potentials );
 
     ui->plainTextEdit_result->appendPlainText( estimations.calculateString );
+
+    for( auto item : estimations.est )
+    {
+        if( item < 0 )
+        {
+
+            // Требуется дальнейшая оптимизация
+
+            ui->plainTextEdit_result->appendPlainText( "Оптимизация..." );
+
+            // Расчет...
+
+
+
+            return;
+        }
+    }
+
+    ui->plainTextEdit_result->appendPlainText( "Текущая стоимость наименьшая, оптимизация не требуется." );
 
 }
 
@@ -752,11 +773,11 @@ MainWindow::Potentials MainWindow::calculatePotentials()
 
             if( potentials.u[item.users] >= 0 )
             {
-                potentials.calculateString += QString("v%1 = %2 - %3 = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( potentials.v[ item.supply ] );
+                potentials.calculateString += QString("v%1 = %2 - %3 = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( currentElement - potentials.u[item.users] );
             }
             else
             {
-                potentials.calculateString += QString("v%1 = %2 - (%3) = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( potentials.v[ item.supply ] );
+                potentials.calculateString += QString("v%1 = %2 - (%3) = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( currentElement - potentials.u[item.users] );
             }
 
             // Помечаем заполненными сразу U и V
@@ -789,11 +810,11 @@ MainWindow::Potentials MainWindow::calculatePotentials()
 
                 if( potentials.u[item.users] >= 0 )
                 {
-                    potentials.calculateString += QString("u%1 = %2 - %3 = %4 \r\n").arg(item.users+1).arg(currentElement).arg(potentials.v[item.supply]).arg( potentials.u[ item.supply ] );
+                    potentials.calculateString += QString("u%1 = %2 - %3 = %4 \r\n").arg(item.users+1).arg(currentElement).arg(potentials.v[item.supply]).arg( currentElement - potentials.v[item.supply] );
                 }
                 else
                 {
-                    potentials.calculateString += QString("u%1 = %2 - (%3) = %4 \r\n").arg(item.users+1).arg(currentElement).arg(potentials.v[item.supply]).arg( potentials.u[ item.supply ] );
+                    potentials.calculateString += QString("u%1 = %2 - (%3) = %4 \r\n").arg(item.users+1).arg(currentElement).arg(potentials.v[item.supply]).arg( currentElement - potentials.v[item.supply]  );
                 }
 
             }
@@ -809,11 +830,11 @@ MainWindow::Potentials MainWindow::calculatePotentials()
 
                 if( potentials.u[item.users] >= 0 )
                 {
-                    potentials.calculateString += QString("v%1 = %2 - %3 = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( potentials.v[ item.supply ] );
+                    potentials.calculateString += QString("v%1 = %2 - %3 = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( currentElement - potentials.u[item.users] );
                 }
                 else
                 {
-                    potentials.calculateString += QString("v%1 = %2 - (%3) = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( potentials.v[ item.supply ] );
+                    potentials.calculateString += QString("v%1 = %2 - (%3) = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( currentElement - potentials.u[item.users] );
                 }
 
             }
@@ -1364,9 +1385,11 @@ MainWindow::Estimations MainWindow::calculateEstimationOfUnusedRoutes(Potentials
 
             estimations.calculateString += QString("A%1B%2 : Δ%1%2 = c%1%2 - (u%1 + v%2) = ").arg(usersIndex+1).arg(supplyIndex+1); // arg(supplyIndex+1)
 
-            int summ = array[supplyIndex][usersIndex] - ( potentials.u[usersIndex] + potentials.v[supplyIndex]);
+            int summ = array[usersIndex][supplyIndex] - ( potentials.u[usersIndex] + potentials.v[supplyIndex]);
 
-            estimations.calculateString += QString("%1 - (%2 + %3) = %4 \n").arg( array[supplyIndex][usersIndex] ).arg( potentials.u[usersIndex] ).arg( potentials.v[supplyIndex] ).arg(summ);
+                                                                          // .arg( array[supplyIndex][usersIndex] ).arg( potentials.u[usersIndex] ).arg( potentials.v[supplyIndex] ).arg(summ);
+
+            estimations.calculateString += QString("%1 - (%2 + %3) = %4 \n").arg( array[usersIndex][supplyIndex] ).arg( potentials.u[usersIndex] ).arg( potentials.v[supplyIndex] ).arg(summ);
 
             estimations.est.push_back(summ);
 
