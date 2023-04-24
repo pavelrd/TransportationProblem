@@ -246,7 +246,7 @@ void MainWindow::calculate()
 
             // Требуется дальнейшая оптимизация
 
-            ui->plainTextEdit_result->appendPlainText( "Оптимизация..." );
+            // ui->plainTextEdit_result->appendPlainText( "Оптимизация..." );
 
             // Расчет...
 
