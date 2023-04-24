@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include "ItemDelegate.hpp"
 
-#include <vector>
-
 #include <random>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -35,6 +33,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     // ------- Опциональная функция, включает другой вид отрисовки таблицы после расчета
 
+    viewDelegate = ui->tableWidget->itemDelegate();
+
     // ui->tableWidget->setItemDelegate(new ItemDelegate());
 
 
@@ -51,6 +51,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pushButton_create, SIGNAL(clicked()), this, SLOT(createTable()) );
 
     connect(ui->pushButton_calculate, SIGNAL(clicked()), this, SLOT(calculate()) );
+
+    connect( ui->checkBox_splitResultShow, SIGNAL(stateChanged(int)), this, SLOT(changeView(int)) );
 
 }
 
@@ -214,13 +216,23 @@ void MainWindow::calculate()
 
     showAllResultsOnTableWidget();
 
-    // ------- Расчет и получение строки с потенциалами
+    // ------- Расчет потенциалов
 
-    QString potencialsString = calculatePotentials();
+    Potentials potentials = calculatePotentials();
 
     // ------- Отображение строки с расчетом потенциалов
 
-    ui->plainTextEdit_result->appendPlainText( potencialsString );
+    ui->plainTextEdit_result->appendPlainText( potentials.calculateString );
+
+    // ------- Оценка незадействованных маршрутов
+
+    ui->plainTextEdit_result->appendPlainText( QString("Поиск оценки незадействованных маршрутов. \n"));
+
+    Estimations estimations;
+
+    estimations = calculateEstimationOfUnusedRoutes( potentials );
+
+    ui->plainTextEdit_result->appendPlainText( estimations.calculateString );
 
 }
 
@@ -470,7 +482,7 @@ bool MainWindow::isUserInputBad()
 
                     msgBox.exec();
 
-                    return true;
+                    return false;
 
                 }
                 //else
@@ -675,7 +687,7 @@ QString MainWindow::calculateDeliveryCost()
  *
  */
 
-QString MainWindow::calculatePotentials()
+MainWindow::Potentials MainWindow::calculatePotentials()
 {
 
     qDebug() << "\n------- Start calculatePotentials() \n";
@@ -683,12 +695,155 @@ QString MainWindow::calculatePotentials()
     int currentUsers  = ui->tableWidget->columnCount();
     int currentSupply = ui->tableWidget->rowCount();
 
-    int u_start = 0;
-    int v_start = 0;
+    //int u_start = 0;
+    //int v_start = 0;
 
-    int x_supply = 0;
-    int y_users  = 0;
+    //int x_supply = 0;
+    //int y_users  = 0;
 
+    struct Potentials potentials(currentUsers, currentSupply);
+
+    enum filled
+    {
+        FILLED = 0,
+        UNFILLED
+    };
+
+    vector<filled> filledU(currentUsers);
+    vector<filled> filledV(currentUsers);
+
+    for( auto& item : potentials.v ) { item = 0; }
+
+    for( auto& item : potentials.u ) { item = 0; }
+
+    for( auto& item : filledU ) { item = UNFILLED; }
+
+    for( auto& item : filledV ) { item = UNFILLED; }
+
+    bool start = true;
+
+    print_array();
+
+    qDebug() << "Cycle " << usedRoute.size();
+
+    potentials.calculateString += QString("Пусть u%1 равно 0 \n").arg(usedRoute[0].users+1);
+
+    for( auto item : usedRoute )
+    {
+
+        volatile int currentElement = array[item.users][item.supply];
+
+        qDebug() << currentElement;
+
+        potentials.calculateString += QString("A%1B%2 : ").arg(item.users+1).arg(item.supply+1);
+
+        if( start )
+        {
+
+            start = false;
+
+            // Приравниваем начальный потенциал нулю
+
+            potentials.u[ item.users ] = 0;
+
+            potentials.v[ item.supply ] = currentElement - potentials.u[item.users];
+
+            potentials.calculateString += QString("v%1 + u%2 = %3   ").arg(item.supply+1).arg(item.users+1).arg(  potentials.u[ item.users ] + potentials.v[ item.supply ] );
+
+            if( potentials.u[item.users] >= 0 )
+            {
+                potentials.calculateString += QString("v%1 = %2 - %3 = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( potentials.v[ item.supply ] );
+            }
+            else
+            {
+                potentials.calculateString += QString("v%1 = %2 - (%3) = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( potentials.v[ item.supply ] );
+            }
+
+            // Помечаем заполненными сразу U и V
+
+            filledU[item.users] = FILLED;
+            filledV[item.supply] = FILLED;
+
+        }
+        else
+        {
+
+            if( filledU[item.users] == UNFILLED )
+            {
+
+                if( filledV[item.supply] == UNFILLED )
+                {
+
+                    potentials.u.clear();
+                    potentials.v.clear();
+
+                    return potentials;
+
+                }
+
+                potentials.u[item.users] = currentElement - potentials.v[item.supply];
+
+                filledU[item.users] = FILLED;
+
+                potentials.calculateString += QString("v%1 + u%2 = %3   ").arg(item.supply+1).arg(item.users+1).arg(  potentials.u[ item.users ] + potentials.v[ item.supply ] );
+
+                if( potentials.u[item.users] >= 0 )
+                {
+                    potentials.calculateString += QString("u%1 = %2 - %3 = %4 \r\n").arg(item.users+1).arg(currentElement).arg(potentials.v[item.supply]).arg( potentials.u[ item.supply ] );
+                }
+                else
+                {
+                    potentials.calculateString += QString("u%1 = %2 - (%3) = %4 \r\n").arg(item.users+1).arg(currentElement).arg(potentials.v[item.supply]).arg( potentials.u[ item.supply ] );
+                }
+
+            }
+            else
+            {
+                // Заполняем V
+
+                potentials.v[item.supply] = currentElement - potentials.u[item.users];
+
+                filledV[item.supply] = FILLED;
+
+                potentials.calculateString += QString("v%1 + u%2 = %3   ").arg(item.supply+1).arg(item.users+1).arg(  potentials.u[ item.users ] + potentials.v[ item.supply ] );
+
+                if( potentials.u[item.users] >= 0 )
+                {
+                    potentials.calculateString += QString("v%1 = %2 - %3 = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( potentials.v[ item.supply ] );
+                }
+                else
+                {
+                    potentials.calculateString += QString("v%1 = %2 - (%3) = %4 \r\n").arg(item.supply+1).arg(currentElement).arg(potentials.u[item.users]).arg( potentials.v[ item.supply ] );
+                }
+
+            }
+
+        }
+
+
+    }
+
+    qDebug() << "U values";
+
+    for( auto item : potentials.u )
+    {
+        qDebug() << item;
+    }
+
+    qDebug() << "V values";
+
+    for( auto item : potentials.v )
+    {
+        qDebug() << item;
+    }
+
+
+    qDebug() << "\n------- End calculatePotentials() \n";
+
+
+    return potentials;
+
+/*
     QString potencialsStringResult;
 
     for(int i = 0; i<(currentUsers+currentSupply-3); i++)
@@ -702,7 +857,7 @@ QString MainWindow::calculatePotentials()
         v_start = array_result[currentSupply][y_users]; // [4][0]
         u_start = array_result[x_supply][currentUsers]; // [1][4]
 
-        //qDebug() << "v_start: " << v_start << "u_start: " << u_start;
+        // qDebug() << "v_start: " << v_start << "u_start: " << u_start;
 
         //
         // TODO: переделать на строку с аргументами
@@ -754,15 +909,16 @@ QString MainWindow::calculatePotentials()
         // print_array_result(currentSupply+1,currentUsers+1);
         //qDebug() << "\n\r" ;
 
-        /* for(){
-        ui->plainTextEdit_result->appendPlainText(QString("A") + QString::number(x_supply+1) + QString("B") + QString::number(y_users+1)
-        }*/
+        // for(){
+        //ui->plainTextEdit_result->appendPlainText(QString("A") + QString::number(x_supply+1) + QString("B") + QString::number(y_users+1)
+        //}
 
     }
+*/
 
-    qDebug() << "\n------- End calculatePotentials() \n";
+    //qDebug() << "\n------- End calculatePotentials() \n";
 
-    return potencialsStringResult;
+    //return potencialsStringResult;
 
 }
 
@@ -784,6 +940,10 @@ void MainWindow::showAllResultsOnTableWidget()
 
     // Заполнение полей таблицы для ячеек AB
 
+    qDebug("TEST PRINT!!!!");
+
+    print_array_result( currentSupply, currentUsers );
+
     for( int x_supply = 0; x_supply < (currentSupply-1); x_supply += 1 )
     {
         for( int y_users = 0; y_users < (currentUsers-1); y_users += 1 )
@@ -795,12 +955,18 @@ void MainWindow::showAllResultsOnTableWidget()
 
             item->setText( cellString );
 
-            if(array_result[y_users][x_supply] != 0)
+
+            for( auto elem : usedRoute )
             {
 
-                item->setFont(QFont("MS Shell Dlg 2",-1,QFont::Bold));
+                if( ( elem.users == y_users ) && ( elem.supply == x_supply ) )
+                {
 
-                item->setBackground(QBrush(QColor(255,170,0,127)));
+                    item->setFont(QFont("MS Shell Dlg 2",-1,QFont::Bold));
+
+                    item->setBackground(QBrush(QColor(255,170,0,127)));
+
+                }
 
             }
 
@@ -862,11 +1028,26 @@ void MainWindow::calculateFirstSolutionByNorthwestCornerMethod()
     int x_supply = 0;
     int y_users = 0;
 
+    usedRoute.clear();
+
     for(int i = 0; i<(currentUsers+currentSupply-3); i++) // так как нам нужна размерность, которую задает пользовтель - 1
     {
 
         int supply_calc = array_result[currentSupply-1][x_supply];
         int users_calc  = array_result[y_users][currentUsers-1];
+
+        // ------- отладка
+
+        qDebug() << "\nResult array, iteration: " << i << "\n";
+
+        print_array_result(currentSupply, currentUsers, x_supply, y_users );
+
+        struct index element;
+
+        element.users  = y_users;
+        element.supply = x_supply;
+
+        usedRoute.push_back(element);
 
         if(supply_calc == users_calc)
         {
@@ -887,9 +1068,9 @@ void MainWindow::calculateFirstSolutionByNorthwestCornerMethod()
 
             // ------- отладка
 
-            qDebug() << "\nResult array, iteration: " << i << "\n";
+            //qDebug() << "\nResult array, iteration: " << i << "\n";
 
-            print_array_result(currentSupply, currentUsers, x_supply, y_users-1 );
+            //print_array_result(currentSupply, currentUsers, x_supply, y_users-1 );
 
             qDebug() << "\nTHEN GO DOWN ↓";
 
@@ -912,9 +1093,9 @@ void MainWindow::calculateFirstSolutionByNorthwestCornerMethod()
 
            // ------- отладка
 
-           qDebug() << "\nResult array, iteration: " << i << "\n";
+           //qDebug() << "\nResult array, iteration: " << i << "\n";
 
-           print_array_result(currentSupply, currentUsers, x_supply-1, y_users );
+           //print_array_result(currentSupply, currentUsers, x_supply-1, y_users );
 
            qDebug() << "\nTHEN GO RIGHT →";
 
@@ -933,11 +1114,7 @@ void MainWindow::calculateFirstSolutionByNorthwestCornerMethod()
 
             y_users += 1;
 
-            // ------- отладка
-
-            qDebug() << "\nResult array, iteration: " << i << "\n";
-
-            print_array_result(currentSupply, currentUsers, x_supply, y_users-1 );
+            //print_array_result(currentSupply, currentUsers, x_supply, y_users-1 );
 
             qDebug() << "\nTHEN GO DOWN ↓";
 
@@ -947,10 +1124,15 @@ void MainWindow::calculateFirstSolutionByNorthwestCornerMethod()
         else
         {
             qDebug() << "BAD CONDITION!!!";
+            usedRoute.resize(usedRoute.size()-1);
+            break;
         }
 
+    }
 
-
+    for( auto element : usedRoute )
+    {
+        qDebug() << element.users << " " << element.supply;
     }
 
     qDebug() << "------- End calculateFirstSolutionByNorthwestCornerMethod()";
@@ -1098,6 +1280,27 @@ void MainWindow::print_array_result(int x, int y, int highlightX, int highlightY
 
 }
 
+/**
+ *
+ * @brief changeView
+ *
+ * @param state
+ *
+ */
+
+void MainWindow::changeView(int state)
+{
+
+    if( state == Qt::Checked )
+    {
+         ui->tableWidget->setItemDelegate(new ItemDelegate());
+    }
+    else
+    {
+        ui->tableWidget->setItemDelegate(viewDelegate);
+    }
+}
+
 /*
    QFile file("data.txt");
    QMessageBox msgBox;
@@ -1120,3 +1323,57 @@ void MainWindow::print_array_result(int x, int y, int highlightX, int highlightY
    }
    }
 */
+
+MainWindow::Estimations MainWindow::calculateEstimationOfUnusedRoutes(Potentials potentials)
+{
+
+    int currentUsers  = ui->tableWidget->columnCount() - 1;
+    int currentSupply = ui->tableWidget->rowCount() - 1;
+
+    QString estimationString = QString("");
+
+    Estimations estimations;
+
+    for(int supplyIndex = 0; supplyIndex < currentSupply; supplyIndex++)
+    {
+        for( int usersIndex = 0 ; usersIndex < currentUsers; usersIndex++ )
+        {
+
+            bool skipCell = false;
+
+            // Проверить нет ли этой ячейки в задействованном маршруте
+
+            for( auto item : usedRoute )
+            {
+                if( ( item.users == usersIndex ) && ( item.supply == supplyIndex ) )
+                {
+                    skipCell = true;
+                    break;
+                }
+            }
+
+            // Проверено и задан флаг
+
+            if( skipCell )
+            {
+                // Пропускаем эту ячейку, потому-что она задействована в существующем маршруте
+                continue;
+            }
+
+            // Ячейка была незадействована в маршруте, считаем для неё оценку незадейтвованных марштутов
+
+            estimations.calculateString += QString("A%1B%2 : Δ%1%2 = c%1%2 - (u%1 + v%2) = ").arg(usersIndex+1).arg(supplyIndex+1); // arg(supplyIndex+1)
+
+            int summ = array[supplyIndex][usersIndex] - ( potentials.u[usersIndex] + potentials.v[supplyIndex]);
+
+            estimations.calculateString += QString("%1 - (%2 + %3) = %4 \n").arg( array[supplyIndex][usersIndex] ).arg( potentials.u[usersIndex] ).arg( potentials.v[supplyIndex] ).arg(summ);
+
+            estimations.est.push_back(summ);
+
+        }
+
+    }
+
+    return estimations;
+
+}

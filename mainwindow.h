@@ -3,6 +3,11 @@
 
 #include <QMainWindow>
 #include <QSettings>
+#include <QAbstractItemDelegate>
+
+#include <vector>
+
+using namespace std;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -30,8 +35,8 @@ private:
     void    fillArrayFromTableWidgetData();
 
     QString calculateDeliveryCost();
-    QString calculatePotentials();
-    void    calculateFirstSolutionByNorthwestCornerMethod();
+
+    void calculateFirstSolutionByNorthwestCornerMethod();
 
     void print_array();
     void print_array_result(int x, int y, int highlightX=-1, int highlightY=-1);
@@ -39,6 +44,45 @@ private:
     int array[100][100] = {};
 
     int array_result[100][100] = {};
+
+    struct index
+    {
+        int supply;
+        int users;
+    };
+
+    vector<index> usedRoute;
+
+    QAbstractItemDelegate* viewDelegate;
+
+    struct Potentials
+    {
+
+        Potentials( int sizeU, int sizeV )
+        {
+            u.resize(sizeU);
+            v.resize(sizeV);
+        }
+
+        vector<int> u;
+        vector<int> v;
+
+        QString calculateString = QString("");
+
+    };
+
+    struct Estimations
+    {
+
+        vector<int> est;
+
+        QString calculateString = QString("");
+
+    };
+
+    Potentials calculatePotentials();
+
+    Estimations calculateEstimationOfUnusedRoutes(Potentials potentials);
 
 private slots:
 
@@ -49,5 +93,8 @@ private slots:
     void calculate();
 
     void on_action_4_triggered();
+
+    void changeView(int state);
+
 };
 #endif // MAINWINDOW_H

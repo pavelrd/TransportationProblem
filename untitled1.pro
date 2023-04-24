@@ -18,11 +18,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     ItemDelegate.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    modi.cpp
 
 HEADERS += \
     ItemDelegate.hpp \
-    mainwindow.h
+    mainwindow.h \
+    modi.h
 
 FORMS += \
     mainwindow.ui
