@@ -1,6 +1,6 @@
 #include "modi.h"
 
-#define DEBUG
+// #define DEBUG
 
 mymatrix get_matrix_from_user_input();
 
@@ -166,7 +166,7 @@ float MODI::lcm(mymatrix a,mystringmatrix &b)
 
 /**
  *
- * @brief nwcr
+ * @brief nwcr NORTH WEST CORNOR SOLUTION
  *
  * @param a
  * @param b
@@ -175,7 +175,7 @@ float MODI::lcm(mymatrix a,mystringmatrix &b)
  *
  */
 
-float nwcr(mymatrix a,mystringmatrix &b)
+float MODI::nwcr(mymatrix a,mystringmatrix &b)
 {
 #ifdef DEBUG
     printf("call nwcr()\n");
@@ -725,7 +725,7 @@ bool MODI::is_matrix_balanced( mymatrix matrix )
  *
  */
 
-void print_string_matrix( mystringmatrix b )
+void MODI::print_string_matrix( mystringmatrix b )
 {
 
     cout << "In string mode: " << endl << endl;
@@ -773,6 +773,233 @@ mymatrix MODI::get_matrix_from_user_input()
     return a;
 }
 
+QString MODI::calc( mymatrix inputMatrix )
+{
+
+    QString result;
+
+    cout << "Input matrix is: \r\n";
+
+    mymatrix fixed_matrix_4x4 = {
+                                  {  5,  3,  1, 10 },
+                                  {  3,  2,  4, 20 },
+                                  {  4,  1,  2, 30 },
+                                  { 15, 20, 25,  0 }
+                                };
+
+    // inputMatrix = fixed_matrix_4x4;
+
+    print_matrix(inputMatrix);
+
+    if( is_matrix_balanced(inputMatrix) )
+    {
+
+        vector<string>b1(inputMatrix[0].size(),"");
+
+        mystringmatrix b(inputMatrix.size(),b1);
+
+        int z = nwcr( inputMatrix, b ); // vam / nwcr
+
+         cout << "NWCR SOLUTION : " << endl;
+
+         print_solution(b);
+
+         cout << "Z=" << z << endl << endl;
+
+        print_string_matrix(b);
+
+        vector<float>u(b.size()-1,0);
+        vector<float>v(b[0].size()-1,0);
+
+        node* curr=NULL;
+
+        vector<node*>nd1(b[0].size(),curr);
+        vector<vector<node*>>nd(b.size(),nd1);
+
+        int chec=optimality_check(inputMatrix,b,u,v,nd);
+
+        if(chec==1)
+        {
+            result += "Решение оптимальное\n";
+        }
+        else if(chec==2)
+        {
+            result += "---\n";
+
+        }
+        else
+        {
+
+            result += "Решение неоптимальное, оптимизация...\n\n";
+
+            int z = calculate(inputMatrix,b,u,v,nd);
+
+            result += "Оптимизация выполнена, результат: \n\n";
+
+            for( auto item : b )
+            {
+                for( auto subitem : item )
+                {
+                    result += QString("%1").arg( QString::fromUtf8(subitem.c_str()), 7 );
+                    result += " ";
+                }
+                result += "\n";
+            }
+
+            print_solution(b);
+
+            cout << "Z=" << z << endl << endl;
+
+            result += QString("\nСтоимость доставки продукции: ") + QString::number(z) + QString(" ден. ед\n");
+
+            //print_string_matrix(b);
+
+        }
+
+    }
+    else
+    {
+        cout << "Given input is of an unbalanced transportation problem" << endl;
+    }
+
+    return result;
+
+}
+
+float MODI::vam( mymatrix a, mystringmatrix  &b )
+{
+#ifdef DEBUG
+    printf("call vam()\n");
+#endif
+    float z=0;
+
+    vector<int> ki(b.size(),0);
+    vector<int> kj(b[0].size(),0);
+
+    for(int i=0; i<a.size(); i++)
+    {
+        for(int j=0; j<a[i].size(); j++)
+        {
+            stringstream ss1;
+            ss1 << a[i][j];
+            ss1 >> b[i][j];
+            if(i<a.size()-1 && j<a[i].size()-1) b[i][j]="0*"+b[i][j];
+        }
+    }
+
+    while(a.size()!=1 && a[0].size()!=1) {
+
+        vector<float>penalties(a.size()+a[0].size()-2,0);
+        for(int i=0; i<a.size()-1; i++) {
+            vector<float>a1=a[i];
+            a1.erase(a1.begin()+a1.size()-1);
+            if(a1.size()>1) {
+                nth_element(a1.begin(),a1.begin()+1,a1.end());
+                penalties[i]=a1[1];
+                nth_element(a1.begin(),a1.begin(),a1.end());
+                penalties[i]-=a1[0];
+            }
+        }
+        for(int i=0; i<a[0].size()-1; i++) {
+            vector<float>a1;
+            for(int j=0; j<a.size()-1; j++) a1.push_back(a[j][i]);
+            if(a1.size()>1) {
+                nth_element(a1.begin(),a1.begin()+1,a1.end());
+                penalties[i+a.size()-1]=a1[1];
+                nth_element(a1.begin(),a1.begin(),a1.end());
+                penalties[i+a.size()-1]-=a1[0];
+            }
+        }
+        float max=penalties[0];
+        int maxi=0;
+        for(int i=1; i<penalties.size(); i++) {
+            if(max<penalties[i]) {
+                max=penalties[i];
+                maxi=i;
+            }
+        }
+        float min;
+        int minj;
+        if(maxi<(a.size()-1)) {
+            min=a[maxi][0];
+            minj=0;
+            for(int j=1; j<a[0].size()-1; j++) {
+                if(min>a[maxi][j]) {
+                    min=a[maxi][j];
+                    minj=j;
+                }
+            }
+        }
+        else {
+            maxi-=(a.size()-1);
+            min=a[0][maxi];
+            minj=0;
+            for(int j=1; j<a.size()-1; j++) {
+                if(min>a[j][maxi]) {
+                    min=a[j][maxi];
+                    minj=j;
+                }
+            }
+            int random=maxi;
+            maxi=minj;
+            minj=random;
+        }
+        string s;
+        if(a[maxi][a[maxi].size()-1]<a[a.size()-1][minj]) {
+            stringstream ss1;
+            z+=(a[maxi][minj]*a[maxi][a[maxi].size()-1]);
+            ss1 << a[maxi][a[maxi].size()-1];
+            ss1 >> s;
+            a[a.size()-1][minj]-=a[maxi][a[maxi].size()-1];
+            a.erase(a.begin()+maxi);
+            for(int i=0; i<=maxi; i++) {
+                if(ki[i]) maxi++;
+            }
+            for(int i=0; i<=minj; i++) {
+                if(kj[i]) minj++;
+            }
+            b[maxi][minj]=b[maxi][minj].substr(1);
+            b[maxi][minj]=s+b[maxi][minj];
+            ki[maxi]++;
+        }
+        else if(a[maxi][a[maxi].size()-1]>a[a.size()-1][minj]) {
+            stringstream ss1;
+            z+=(a[maxi][minj]*a[a.size()-1][minj]);
+            ss1 << a[a.size()-1][minj];
+            ss1 >> s;
+            a[maxi][a[maxi].size()-1]-=a[a.size()-1][minj];
+            for(int i=0; i<a.size(); i++) a[i].erase(a[i].begin()+minj);
+            for(int i=0; i<=maxi; i++) {
+                if(ki[i]) maxi++;
+            }
+            for(int i=0; i<=minj; i++) {
+                if(kj[i]) minj++;
+            }
+            b[maxi][minj]=b[maxi][minj].substr(1);
+            b[maxi][minj]=s+b[maxi][minj];
+            kj[minj]++;
+        }
+        else {
+            stringstream ss1;
+            z+=(a[maxi][minj]*a[a.size()-1][minj]);
+            ss1 << a[a.size()-1][minj];
+            ss1 >> s;
+            a.erase(a.begin()+maxi);
+            for(int i=0; i<a.size(); i++) a[i].erase(a[i].begin()+minj);
+            for(int i=0; i<=maxi; i++) {
+                if(ki[i]) maxi++;
+            }
+            for(int i=0; i<=minj; i++) {
+                if(kj[i]) minj++;
+            }
+            b[maxi][minj]=b[maxi][minj].substr(1);
+            b[maxi][minj]=s+b[maxi][minj];
+            ki[maxi]++;
+            kj[minj]++;
+        }
+    }
+    return z;
+}
 
 /*
 5 3 1 10
