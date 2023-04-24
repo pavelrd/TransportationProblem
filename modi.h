@@ -39,7 +39,7 @@ public:
 
     bool  is_matrix_balanced( mymatrix matrix );
 
-    QString calc( mymatrix inputMatrix );
+    QString calc(mymatrix inputMatrix , mymatrix resultMatrix);
 
 private:
 

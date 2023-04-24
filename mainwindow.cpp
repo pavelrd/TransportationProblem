@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "ItemDelegate.hpp"
 
-#include <modi.h>
+#include "modi.h"
 
 #include <random>
 
@@ -274,7 +274,24 @@ void MainWindow::calculate()
 
             }
 
-            QString value = modi.calc( matrix );
+            mymatrix result_matrix;
+
+            for(int currentSupplyIndex = 0; currentSupplyIndex < currentSupply; currentSupplyIndex++)
+            {
+
+                vector<float> row;
+
+                for( int currentUsersIndex = 0 ; currentUsersIndex < currentUsers; currentUsersIndex++)
+                {
+
+                    row.push_back( array_result[currentSupplyIndex][currentUsersIndex]  );
+                }
+
+                result_matrix.push_back(row);
+
+            }
+
+            QString value = modi.calc( matrix, result_matrix );
 
             // -------- Вывод расчета в текстовое поле
 
