@@ -1,6 +1,6 @@
 #include "modi.h"
 
-// #define DEBUG
+#define DEBUG
 
 mymatrix get_matrix_from_user_input();
 

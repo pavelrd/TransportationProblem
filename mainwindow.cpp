@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include "ItemDelegate.hpp"
 
+#include <modi.h>
+
 #include <random>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -190,7 +192,8 @@ void MainWindow::calculate()
     }
     else
     {
-        ui->plainTextEdit_result->appendPlainText(QString("Задача неравновесная"));
+        ui->plainTextEdit_result->appendPlainText(QString("Задача неравновесная!"));
+        return;
     }
 
     // ------- Очистка массива с результатом result_array
@@ -246,6 +249,36 @@ void MainWindow::calculate()
             ui->plainTextEdit_result->appendPlainText( "Оптимизация..." );
 
             // Расчет...
+
+            // ------- Подсчет с помощью класса MODI
+
+            MODI modi;
+
+            int currentUsers  = ui->tableWidget->columnCount();
+            int currentSupply = ui->tableWidget->rowCount();
+
+            mymatrix matrix;
+
+            for(int currentSupplyIndex = 0; currentSupplyIndex < currentSupply; currentSupplyIndex++)
+            {
+
+                vector<float> row;
+
+                for( int currentUsersIndex = 0 ; currentUsersIndex < currentUsers; currentUsersIndex++)
+                {
+
+                    row.push_back( array[currentSupplyIndex][currentUsersIndex]  );
+                }
+
+                matrix.push_back(row);
+
+            }
+
+            QString value = modi.calc( matrix );
+
+            // -------- Вывод расчета в текстовое поле
+
+            ui->plainTextEdit_result->appendPlainText( value );
 
 
 
