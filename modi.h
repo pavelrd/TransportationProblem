@@ -33,7 +33,7 @@ public:
 
     float calculate(mymatrix a,mystringmatrix &b,vector<float>&u,vector<float>&v,vector<vector<node*>>&nd);
 
-    void print_solution(mystringmatrix b);
+    // void print_solution(mystringmatrix b);
 
     float optimality_check( mymatrix a, mystringmatrix &b, vector<float>&u, vector<float>&v, vector<vector<node*>>&nd );
 
