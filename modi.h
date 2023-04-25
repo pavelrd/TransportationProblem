@@ -11,6 +11,12 @@ using namespace std;
 typedef vector<vector<float>>  mymatrix;
 typedef vector<vector<string>> mystringmatrix;
 
+struct calcResult
+{
+    QString    text;
+    mymatrix values;
+};
+
 class MODI
 {
 private:
@@ -27,9 +33,8 @@ private:
         node(string z, int i, int j) : a(z), value(0), i(i), j(j), left(NULL), right(NULL), top(NULL), bottom(NULL) {}
     };
 
-
-
 public:
+
 
     float calculate(mymatrix a,mystringmatrix &b,vector<float>&u,vector<float>&v,vector<vector<node*>>&nd);
 
@@ -39,7 +44,7 @@ public:
 
     bool  is_matrix_balanced( mymatrix matrix );
 
-    QString calc(mymatrix inputMatrix , mymatrix resultMatrix);
+    calcResult calc(mymatrix inputMatrix , mymatrix resultMatrix);
 
 private:
 

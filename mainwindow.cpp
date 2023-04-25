@@ -171,6 +171,41 @@ void MainWindow::calculate()
 
     ui->plainTextEdit_result->clear();
 
+    if( ui->pushButton_calculate->text() == "Сброс" )
+    {
+
+        ui->pushButton_calculate->setText("Расчет");
+
+        int currentUsers  = ui->tableWidget->columnCount();
+        int currentSupply = ui->tableWidget->rowCount();
+
+        print_array();
+
+        for( int x_supply = 0; x_supply < currentSupply; x_supply += 1 )
+        {
+            for( int y_users = 0; y_users < currentUsers; y_users += 1 )
+            {
+
+                if( (x_supply == (currentSupply-1)) && (y_users == (currentUsers-1)) )
+                {
+                    continue;
+                }
+
+                QTableWidgetItem* item = ui->tableWidget->item(x_supply, y_users);
+
+                item->setFont(QFont("MS Shell Dlg 2",-1,QFont::Normal));
+
+                item->setBackground(QBrush(QColor(255,255,255,0)));
+
+                item->setText( QString::number( array[x_supply][y_users])  );
+
+            }
+        }
+
+        return;
+
+    }
+
     // ------- Проверка пользовательского ввода
 
     if( isUserInputBad() )
@@ -196,7 +231,7 @@ void MainWindow::calculate()
         return;
     }
 
-    if( ui->radioButton_northWestCorner->isChecked() )
+    if(  ( ui->radioButton_northWestCorner->isChecked() ) || (ui->radioButton_potetntialsMethod->isChecked()) )
     {
         // Расчёт методом северо-западного угла
         calculateByNorthWestCornerMethod();
@@ -218,9 +253,21 @@ void MainWindow::calculate()
 void MainWindow::calculateByNorthWestCornerMethod()
 {
 
+    if( ui->radioButton_potetntialsMethod->isChecked() )
+    {
+
+        // -------- Выбран метод расчета с помощью потенциалов
+        //           в этом случае метод северо-западного угла является предварительным
+        //           выводим информацию об этом
+
+        ui->plainTextEdit_result->appendPlainText("Предварительный расчет методом северо-западного угла\n");
+
+    }
+
     // ------- Очистка массива с результатом result_array
 
     clearResultArray();
+
     // ------- Скопировать значения потребностей и запасов из массива array в массив result_array
 
     copyUsersAndSupplyValuesToResultArray();
@@ -242,6 +289,16 @@ void MainWindow::calculateByNorthWestCornerMethod()
 
     showAllResultsOnTableWidget();
 
+    if( !ui->radioButton_potetntialsMethod->isChecked() )
+    {
+
+        // ------- Выбран расчет только методом северо-западного угла
+        //          поэтому заканчиваем расчет здесь, иначе расчет продолжится(будет оптимизация)
+
+        return;
+
+    }
+
     // ------- Расчет потенциалов
 
     Potentials potentials = calculatePotentials();
@@ -259,6 +316,8 @@ void MainWindow::calculateByNorthWestCornerMethod()
     estimations = calculateEstimationOfUnusedRoutes( potentials );
 
     ui->plainTextEdit_result->appendPlainText( estimations.calculateString );
+
+    // ------- Проверяем все оценки, при нахождении отрицательной оценкм нужна оптимизация
 
     for( auto item : estimations.est )
     {
@@ -312,15 +371,45 @@ void MainWindow::calculateByNorthWestCornerMethod()
 
             }
 
-            QString value = modi.calc( matrix, result_matrix );
+            calcResult res = modi.calc( matrix, result_matrix );
 
             // -------- Вывод расчета в текстовое поле
 
-            ui->plainTextEdit_result->appendPlainText( value );
+            ui->plainTextEdit_result->appendPlainText( res.text );
+
+            usedRoute.clear();
+
+            // ------- Переносим данные из строковой матрицы в основную
+
+            for(int currentSupplyIndex = 0; currentSupplyIndex < currentSupply; currentSupplyIndex++)
+            {
+
+                for( int currentUsersIndex = 0 ; currentUsersIndex < currentUsers; currentUsersIndex++)
+                {
+                    array_result[currentSupplyIndex][currentUsersIndex] = res.values[currentSupplyIndex][currentUsersIndex];
+
+                    if( array_result[currentSupplyIndex][currentUsersIndex] != 0 )
+                    {
+
+                        struct index ind;
+
+                        ind.users  =  currentSupplyIndex;
+                        ind.supply = currentUsersIndex;
+
+                        usedRoute.push_back(ind);
+
+                    }
+
+                }
+            }
+
+            print_array_result(currentSupply, currentUsers);
 
 
+            showAllResultsOnTableWidget();
 
             return;
+
         }
     }
 
@@ -470,6 +559,26 @@ void MainWindow::calculateByRandomMethod()
         // ------- Отображение строки с расчетом стоимости доставки
 
         ui->plainTextEdit_result->appendPlainText( deliveryCostString );
+
+        usedRoute.clear();
+
+        for( int x = 0 ; x < currentSupply; x++ )
+        {
+            for(int y = 0 ; y < currentUsers; y++ )
+            {
+                if( array_result[x][y] != 0)
+                {
+                    struct index ind;
+
+                    ind.users  =  x;
+                    ind.supply = y;
+
+                    usedRoute.push_back(ind);
+
+                }
+            }
+        }
+
 
         showAllResultsOnTableWidget();
 
@@ -623,6 +732,12 @@ void MainWindow::on_action_2_triggered()
 
 void MainWindow::on_action_3_triggered()
 {
+
+    if( ui->pushButton_calculate->text() == "Сброс" )
+    {
+        ui->pushButton_calculate->setText("Расчет");
+
+    }
 
    // ui->tableWidget->clearContents();
 
@@ -1175,6 +1290,8 @@ MainWindow::Potentials MainWindow::calculatePotentials()
 void MainWindow::showAllResultsOnTableWidget()
 {
 
+    ui->pushButton_calculate->setText("Сброс");
+
     int currentUsers  = ui->tableWidget->columnCount();
     int currentSupply = ui->tableWidget->rowCount();
 
@@ -1200,6 +1317,10 @@ void MainWindow::showAllResultsOnTableWidget()
             QTableWidgetItem* item = ui->tableWidget->item(x_supply, y_users);
 
             item->setText( cellString );
+
+            item->setFont(QFont("MS Shell Dlg 2",-1,QFont::Normal));
+
+            item->setBackground(QBrush(QColor(255,255,255,255)));
 
             for( auto elem : usedRoute )
             {
@@ -1394,6 +1515,12 @@ void MainWindow::calculateFirstSolutionByNorthwestCornerMethod()
 
 void MainWindow::on_action_4_triggered()
 {
+
+    if( ui->pushButton_calculate->text() == "Сброс" )
+    {
+        ui->pushButton_calculate->setText("Расчет");
+        ui->plainTextEdit_result->clear();
+    }
 
     int currentUsers  = ui->tableWidget->columnCount();
     int currentSupply = ui->tableWidget->rowCount();

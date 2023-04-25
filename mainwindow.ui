@@ -247,6 +247,16 @@
        </widget>
       </item>
       <item>
+       <widget class="QRadioButton" name="radioButton_potetntialsMethod">
+        <property name="text">
+         <string>Метод потенциалов</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">buttonGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
        <widget class="QRadioButton" name="radioButton_randomMethod">
         <property name="text">
          <string>Метод случайных чисел</string>

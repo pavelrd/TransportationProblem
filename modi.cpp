@@ -1,5 +1,7 @@
 #include "modi.h"
 
+#include <QStringList>
+
 #define DEBUG
 
 /**
@@ -485,7 +487,7 @@ void MODI::print_string_matrix( mystringmatrix b )
 
 }
 
-QString MODI::calc( mymatrix inputMatrix, mymatrix resultMatrix )
+calcResult MODI::calc(mymatrix inputMatrix, mymatrix resultMatrix )
 {
 
     QString result;
@@ -574,25 +576,40 @@ QString MODI::calc( mymatrix inputMatrix, mymatrix resultMatrix )
 
     int z = calculate( inputMatrix, b, u, v, nd );
 
-    result += "Оптимизация выполнена, результат: \n\n";
+    result += "Оптимизация выполнена. \n";
+
+    calcResult res;
 
     for( auto item : b )
     {
+
+        vector<float> row;
+
         for( auto subitem : item )
         {
-            result += QString("%1").arg( QString::fromUtf8(subitem.c_str()), 7 );
-            result += " ";
+
+            QString st = QString::fromUtf8(subitem.c_str()).split("*")[0];
+
+            row.push_back( st.toFloat() );
+
+            //result += QString("%1").arg( QString::fromUtf8(subitem.c_str()), 7 );
+            //result += " ";
         }
-        result += "\n";
+        //result += "\n";
+
+        res.values.push_back(row);
+
     }
 
     // print_solution(b);
 
     cout << "Z=" << z << endl << endl;
 
-    result += QString("\nСтоимость доставки продукции: ") + QString::number(z) + QString(" ден. ед\n");
+    result += QString("Стоимость доставки продукции: ") + QString::number(z) + QString(" ден. ед\n");
 
-    return result;
+    res.text = result;
+
+    return res;
 
 }
 
