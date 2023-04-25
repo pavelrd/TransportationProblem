@@ -1331,33 +1331,7 @@ void MainWindow::print_array()
         for(int j = 0; j<y;j++)
         {
 
-            auto array_value = array[i][j];
-
-            // ------- Добавление лишних пробелов для выравнивания
-
-            if( array_value < 10 )
-            {
-                rowText += "    ";
-            }
-            else if( array_value < 100 )
-            {
-                rowText += "   ";
-            }
-            else if( array_value < 1000 )
-            {
-                rowText += "  ";
-            }
-
-            if( array_value >= 0 )
-            {
-                rowText += " ";
-            }
-
-            rowText += " ";
-
-            // -------
-
-            rowText += QString::number(array_value);
+            rowText += QString("%1").arg(array[i][j], 5);
 
         }
         qDebug() << rowText;
@@ -1381,34 +1355,16 @@ void MainWindow::print_array_result(int x, int y, int highlightX, int highlightY
         for(int j = 0; j<y;j++)
         {
 
-            auto array_value = array_result[i][j];
-
-            // ------- Добавление лишних пробелов для выравнивания
-
-            if( array_value < 10 )
-            {
-                rowText += "   ";
-            }
-            else if( array_value < 100 )
-            {
-                rowText += "  ";
-            }
-
-            if( array_value >= 0 )
-            {
-                rowText += " ";
-            }
-
             // -------
 
             if( (highlightX == j) && (highlightY == i) )
             {
-                rowText += QString("[") + QString::number(array_value) + QString("]");
+                rowText += QString("  [0]");
             }
             else
             {
-                rowText += "  ";
-                rowText += QString::number(array_value);
+
+                rowText += QString("%1").arg(array_result[i][j], 5);
 
             }
 
