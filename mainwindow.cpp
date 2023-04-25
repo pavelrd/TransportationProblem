@@ -515,6 +515,7 @@ void MainWindow::calculateByRandomMethod()
 
                 array_result[x_supply][y_users] = rand() % randomMax;
 
+
             }
         }
 
@@ -1536,7 +1537,7 @@ void MainWindow::on_action_4_triggered()
 
             item->setBackground(QBrush(QColor(255,255,255)));
 
-            item->setText( QString::number( rand() % 10 ) );
+            item->setText( QString::number( (rand() % 11) + 1 ) );
 
         }
     }
@@ -1546,7 +1547,12 @@ void MainWindow::on_action_4_triggered()
     for( int supplyIndex = 0 ; supplyIndex < (currentSupply - 1 ); supplyIndex += 1 )
     {
 
-        int randomNumber = rand() % 50;
+        int randomNumber = 0;
+
+        while(randomNumber < 5 )
+        {
+            randomNumber = rand() % 50;
+        }
 
         supplyRandomSumm += randomNumber;
 
@@ -1572,7 +1578,12 @@ void MainWindow::on_action_4_triggered()
         for( int i = 0; i < (currentUsers-1); i++ )
         {
 
-            int number = rand() % 50;
+            int number = 0;
+
+            while(number < 5 )
+            {
+                number = rand() % 50;
+            }
 
             summ += number;
 
