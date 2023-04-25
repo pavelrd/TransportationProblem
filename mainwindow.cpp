@@ -1013,6 +1013,9 @@ void MainWindow::showAllResultsOnTableWidget()
 
     qDebug("TEST PRINT!!!!");
 
+    qDebug() << "Column: " << currentUsers;
+    qDebug() << "Row: "    << currentSupply;
+
     print_array_result( currentSupply, currentUsers );
 
     for( int x_supply = 0; x_supply < (currentSupply-1); x_supply += 1 )
@@ -1020,17 +1023,16 @@ void MainWindow::showAllResultsOnTableWidget()
         for( int y_users = 0; y_users < (currentUsers-1); y_users += 1 )
         {
 
-            QString cellString = QString::number(array[y_users][x_supply]) + QString("  ") + QString::number(array_result[y_users][x_supply]);
+            QString cellString = QString::number(array[x_supply][y_users]) + QString("  ") + QString::number(array_result[x_supply][y_users]);
 
-            QTableWidgetItem* item = ui->tableWidget->item(y_users,x_supply);
+            QTableWidgetItem* item = ui->tableWidget->item(x_supply, y_users);
 
             item->setText( cellString );
-
 
             for( auto elem : usedRoute )
             {
 
-                if( ( elem.users == y_users ) && ( elem.supply == x_supply ) )
+                if( ( elem.users == x_supply ) && ( elem.supply == y_users ) )
                 {
 
                     item->setFont(QFont("MS Shell Dlg 2",-1,QFont::Bold));
@@ -1048,13 +1050,14 @@ void MainWindow::showAllResultsOnTableWidget()
 
     // строка потребность
 
-    for( int x_supply = 0; x_supply < (currentSupply - 1); x_supply += 1 )
+    for( int y_users = 0; y_users < (currentUsers - 1); y_users += 1 )
     {
-      if(array_result[currentUsers - 1][x_supply] == -1){
+      if(array_result[currentSupply - 1][y_users] == -1)
+      {
 
-          QString cellstring = QString::number(array[currentUsers - 1][x_supply]) + QString("  ") + QString("нет");
+          QString cellstring = QString::number(array[currentSupply - 1][y_users]) + QString("  ") + QString("нет");
 
-          QTableWidgetItem *item = ui->tableWidget->item(currentUsers-1,x_supply);
+          QTableWidgetItem *item = ui->tableWidget->item(currentSupply-1,y_users);
 
           item->setText(cellstring);
 
@@ -1063,13 +1066,14 @@ void MainWindow::showAllResultsOnTableWidget()
 
     //строка запас
 
-    for( int y_users = 0; y_users < (currentUsers - 1); y_users += 1 )
+    for( int x_supply = 0; x_supply < (currentSupply - 1); x_supply += 1 )
     {
-      if(array_result[y_users][currentSupply - 1] == -1){
+      if(array_result[x_supply][currentUsers - 1] == -1)
+      {
 
-          QString cellstring = QString::number(array[y_users][currentSupply - 1]) + QString("  ") + QString("нет");
+          QString cellstring = QString::number(array[x_supply][currentUsers - 1]) + QString("  ") + QString("нет");
 
-          QTableWidgetItem *item = ui->tableWidget->item(y_users,currentSupply-1);
+          QTableWidgetItem *item = ui->tableWidget->item(x_supply,currentUsers-1);
 
           item->setText(cellstring);
 
@@ -1222,17 +1226,12 @@ void MainWindow::on_action_4_triggered()
     int currentUsers  = ui->tableWidget->columnCount();
     int currentSupply = ui->tableWidget->rowCount();
 
-    for(int supplyIndex = 0; supplyIndex < currentSupply; supplyIndex++)
+    for(int supplyIndex = 0; supplyIndex < ( currentSupply - 1 ); supplyIndex++)
     {
-        for( int currentIndex = 0 ; currentIndex < currentUsers; currentIndex++)
+        for( int usersIndex = 0 ; usersIndex < ( currentUsers - 1 ); usersIndex++)
         {
-            if( ( supplyIndex == currentSupply-1 ) && (currentIndex == currentUsers-1) )
-            {
-                // Крайняя, неактивированная ячейка
-                continue;
-            }
 
-            QTableWidgetItem* item =  ui->tableWidget->item(supplyIndex,currentIndex);
+            QTableWidgetItem* item =  ui->tableWidget->item(supplyIndex, usersIndex);
 
             item->setFont(QFont("MS Shell Dlg 2",-1,QFont::Normal));
 
@@ -1240,11 +1239,79 @@ void MainWindow::on_action_4_triggered()
 
             item->setText( QString::number( rand() % 50 ) );
 
-            ui->plainTextEdit_result->clear();
-
         }
     }
 
+    int supplyRandomSumm = 0;
+
+    for( int supplyIndex = 0 ; supplyIndex < (currentSupply - 1 ); supplyIndex += 1 )
+    {
+
+        int randomNumber = rand() % 50;
+
+        supplyRandomSumm += randomNumber;
+
+        QTableWidgetItem* item =  ui->tableWidget->item(supplyIndex, currentUsers - 1 );
+
+        item->setFont(QFont("MS Shell Dlg 2",-1,QFont::Normal));
+
+        item->setBackground(QBrush(QColor(255,255,255)));
+
+        item->setText( QString::number( randomNumber ) );
+
+    }
+
+    std::vector<int> rnumbers;
+
+    while(1)
+    {
+
+        int summ = 0;
+
+        rnumbers.clear();
+
+        for( int i = 0; i < (currentUsers-1); i++ )
+        {
+
+            int number = rand() % 50;
+
+            summ += number;
+
+            rnumbers.push_back( number );
+
+        }
+
+        if( summ == supplyRandomSumm )
+        {
+
+            break;
+
+        }
+
+    }
+
+    for( int usersIndex = 0 ; usersIndex < (currentUsers - 1 ); usersIndex += 1 )
+    {
+
+        QTableWidgetItem* item =  ui->tableWidget->item( currentSupply - 1, usersIndex );
+
+        item->setFont(QFont("MS Shell Dlg 2",-1,QFont::Normal));
+
+        item->setBackground(QBrush(QColor(255,255,255)));
+
+        item->setText( QString::number( rnumbers[usersIndex] ) );
+
+    }
+
+    ui->plainTextEdit_result->clear();
+
+    /*
+    if( ( supplyIndex == currentSupply-1 ) && (currentIndex == currentUsers-1) )
+    {
+        // Крайняя, неактивированная ячейка
+        continue;
+    }
+    */
 }
 
 /**
