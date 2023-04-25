@@ -247,9 +247,9 @@
        </widget>
       </item>
       <item>
-       <widget class="QRadioButton" name="radioButton_2">
+       <widget class="QRadioButton" name="radioButton_randomMethod">
         <property name="text">
-         <string>Метод ---</string>
+         <string>Метод случайных чисел</string>
         </property>
         <attribute name="buttonGroup">
          <string notr="true">buttonGroup</string>
@@ -257,13 +257,10 @@
        </widget>
       </item>
       <item>
-       <widget class="QRadioButton" name="radioButton_3">
-        <property name="text">
-         <string>Метод ---</string>
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
-        <attribute name="buttonGroup">
-         <string notr="true">buttonGroup</string>
-        </attribute>
        </widget>
       </item>
       <item>
@@ -282,6 +279,19 @@
          <string>Раздельное отображение результата</string>
         </property>
        </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </item>
@@ -377,7 +387,7 @@
      <x>0</x>
      <y>0</y>
      <width>552</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">

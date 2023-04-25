@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     //           srand(time(0))
     //
 
-    srand(100);
+    srand(time(0));
 
     // ------- Соединение сигналов от элементов формы с их обратотчиками
 
@@ -161,7 +161,7 @@ void MainWindow::createTable()
 /**
  *
  * @brief Вызывается при нажатии кнопки "Расчёт".
- *         Производит расчет транспортной задачи методом северо западного угла
+ *         Производит расчет транспортной задачи выбранным методом
  *         Выводит результат в таблицу и в текстовом виде
  *
  */
@@ -196,10 +196,31 @@ void MainWindow::calculate()
         return;
     }
 
+    if( ui->radioButton_northWestCorner->isChecked() )
+    {
+        // Расчёт методом северо-западного угла
+        calculateByNorthWestCornerMethod();
+    }
+    else if( ui->radioButton_randomMethod->isChecked() )
+    {
+        // Расчет случайным методом
+        calculateByRandomMethod();
+    }
+
+}
+
+/**
+ *
+ * @brief Расчёт методом северо-западного угла
+ *
+ */
+
+void MainWindow::calculateByNorthWestCornerMethod()
+{
+
     // ------- Очистка массива с результатом result_array
 
     clearResultArray();
-
     // ------- Скопировать значения потребностей и запасов из массива array в массив result_array
 
     copyUsersAndSupplyValuesToResultArray();
@@ -304,6 +325,155 @@ void MainWindow::calculate()
     }
 
     ui->plainTextEdit_result->appendPlainText( "Текущая стоимость наименьшая, оптимизация не требуется." );
+}
+
+/**
+ *
+ * @brief Проверка матрицы с результатом на полный баланс, по всем строкам и столбцам
+ *         Сумма всех ячеек в строке не должна быть больше запаса
+ *         Сумма всех ячеек в столбце не должна быть больше потребности
+ *
+ * @return true - баланс соблюдается, false - баланс не соблюдается
+ *
+ */
+
+bool MainWindow::isFullBalance()
+{
+
+    int currentUsers  = ui->tableWidget->columnCount();
+    int currentSupply = ui->tableWidget->rowCount();
+
+
+    for( int x_supply = 0 ; x_supply < (currentSupply-1); x_supply += 1 )
+    {
+
+        int summ = 0;
+        int y_users = 0;
+
+        for( ; y_users < (currentUsers-1); y_users += 1 )
+        {
+
+            summ += array_result[x_supply][y_users];
+
+        }
+
+        // qDebug() << "Summ: " << summ << "Target summ: " << array[x_supply][y_users];
+
+        if( summ != array[x_supply][y_users] )
+        {
+            return false;
+        }
+
+    }
+
+    for( int y_users = 0 ; y_users < (currentUsers-1); y_users += 1 )
+    {
+
+        int summ = 0;
+        int x_supply = 0;
+
+        for( ; x_supply < (currentSupply-1); x_supply += 1 )
+        {
+
+            summ += array_result[x_supply][y_users];
+
+        }
+
+        // qDebug() << "Summ: " << summ << "Target summ: " << array[x_supply][y_users];
+
+        if( summ != array[x_supply][y_users] )
+        {
+            return false;
+        }
+
+    }
+
+    return true;
+
+}
+
+/**
+ *
+ * @brief Расчет случайным методом
+ *
+ */
+
+void MainWindow::calculateByRandomMethod()
+{
+
+    int currentUsers  = ui->tableWidget->columnCount();
+    int currentSupply = ui->tableWidget->rowCount();
+
+    int iterations = 0;
+
+    while( iterations <= 10000000 )
+    {
+
+        for( int x_supply = 0 ; x_supply < (currentSupply-1); x_supply += 1 )
+        {
+
+            for( int y_users = 0 ; y_users < (currentUsers-1); y_users += 1 )
+            {
+
+                int randomMax = array[x_supply][currentUsers-1];
+
+                if( randomMax > array[currentSupply-1][y_users] )
+                {
+                    randomMax = array[currentSupply-1][y_users];
+                }
+
+                // qDebug() << "Random max" << randomMax;
+
+                array_result[x_supply][y_users] = rand() % randomMax;
+
+            }
+        }
+
+        if ( isFullBalance() )
+        {
+
+            for( int x_supply = 0 ; x_supply < (currentSupply-1); x_supply += 1 )
+            {
+                array_result[x_supply][currentUsers-1] = -1;
+            }
+
+            for( int y_users = 0 ; y_users < (currentUsers-1); y_users += 1 )
+            {
+                array_result[currentSupply-1][y_users] = -1;
+            }
+
+
+            break;
+        }
+
+        iterations += 1;
+
+    }
+
+    qDebug() << "Total iterations is: " << iterations;
+
+    print_array_result(currentSupply, currentUsers);
+
+    if( iterations >= 10000000 )
+    {
+        ui->plainTextEdit_result->appendPlainText( "Решения не было найдено за максимально возможное число попыток!\n" );
+    }
+    else
+    {
+
+        ui->plainTextEdit_result->appendPlainText( QString( "Решение найдено за %1 попыток\n" ).arg( iterations ) );
+
+        // ------- Расчет и получение строки со стоимостью доставки
+
+        QString deliveryCostString = calculateDeliveryCost();
+
+        // ------- Отображение строки с расчетом стоимости доставки
+
+        ui->plainTextEdit_result->appendPlainText( deliveryCostString );
+
+        showAllResultsOnTableWidget();
+
+    }
 
 }
 
@@ -549,11 +719,13 @@ bool MainWindow::isUserInputBad()
                         usersText = QString("B") + QString::number(usersIndex+1);
                     }
 
+                    msgBox.setWindowTitle("Ошибка!");
+
                     msgBox.setText( QString("Не заполнен или заполнен неправильно элемент в строке: ") + supplyText + QString(" столбце: ") + usersText );
 
                     msgBox.exec();
 
-                    return false;
+                    return true;
 
                 }
                 //else
@@ -1237,7 +1409,7 @@ void MainWindow::on_action_4_triggered()
 
             item->setBackground(QBrush(QColor(255,255,255)));
 
-            item->setText( QString::number( rand() % 50 ) );
+            item->setText( QString::number( rand() % 10 ) );
 
         }
     }

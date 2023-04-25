@@ -38,8 +38,13 @@ private:
 
     void calculateFirstSolutionByNorthwestCornerMethod();
 
+    void calculateByNorthWestCornerMethod();
+    void calculateByRandomMethod();
+
     void print_array();
     void print_array_result(int x, int y, int highlightX=-1, int highlightY=-1);
+
+    bool isFullBalance();
 
     int array[100][100] = {};
 
