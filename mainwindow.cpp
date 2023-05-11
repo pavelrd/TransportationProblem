@@ -1008,10 +1008,10 @@ QString MainWindow::calculateDeliveryCost()
     {
         for( int y_users = 0; y_users < (currentUsers-1); y_users += 1 )
         {
-            if(array_result[y_users][x_supply] > 0)
+            if(array_result[x_supply][y_users] > 0)
             {
-                cost += array_result[y_users][x_supply] * array[y_users][x_supply];
-                stringResult += QString::number(array_result[y_users][x_supply]) + QString("*") + QString::number(array[y_users][x_supply]);
+                cost += array_result[x_supply][y_users] * array[x_supply][y_users];
+                stringResult += QString::number(array_result[x_supply][y_users]) + QString("*") + QString::number(array[x_supply][y_users]);
 
                 if( ( currentSupply-2 == x_supply ) && ( currentUsers-2 == y_users ) )
                 {
