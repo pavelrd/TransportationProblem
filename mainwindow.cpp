@@ -414,6 +414,7 @@ void MainWindow::calculateByNorthWestCornerMethod()
     }
 
     ui->plainTextEdit_result->appendPlainText( "Текущая стоимость наименьшая, оптимизация не требуется." );
+
 }
 
 /**
@@ -1424,7 +1425,7 @@ void MainWindow::calculateFirstSolutionByNorthwestCornerMethod()
             array_result[y_users][x_supply] = supply_calc;
             array_result[y_users][currentUsers-1] = -1;
 
-            if( ((currentSupply-2) == x_supply) && ((currentUsers-2) == y_users) )
+            if( ((currentSupply-2) == y_users) && ((currentUsers-2) == x_supply) )
             {
                 array_result[currentSupply-1][x_supply] = -1;
             }
