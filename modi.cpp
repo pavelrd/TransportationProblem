@@ -524,13 +524,15 @@ calcResult MODI::calc(mymatrix inputMatrix, mymatrix resultMatrix )
 
     for( int i = 0 ; i < inputMatrix.size(); i++ )
     {
+
         vector<string> b1;
+
         for( int j = 0 ;  j < inputMatrix[0].size(); j++ )
         {
 
             string mystr;
 
-            if( ( j == (inputMatrix.size()-1) ) || (  i == (inputMatrix.size()-1) ) )
+            if( ( j == (inputMatrix[0].size()-1) ) || (  i == (inputMatrix.size()-1) ) )
             {
 
                 mystr = std::to_string((int)inputMatrix[i][j]);
@@ -550,7 +552,6 @@ calcResult MODI::calc(mymatrix inputMatrix, mymatrix resultMatrix )
     }
 
     // print_string_matrix(b);
-
 
     vector<float>u(b.size()-1,0);
     vector<float>v(b[0].size()-1,0);
